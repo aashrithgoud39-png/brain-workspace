@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brain — Manager Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script>
+  (function(){
+    if(localStorage.getItem('brain-theme') === 'dark'){
+      document.documentElement.setAttribute('data-theme','dark');
+    }
+  })();
+</script>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <aside class="chat-sidebar" id="chat-sidebar">
+    <div class="chat-sidebar-header">
+      <button class="chat-back-btn" onclick="closeThread()" aria-label="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>
+      </button>
+      <h4 id="chat-panel-title">Messages</h4>
+    </div>
+    <div class="chat-search">
+      <input type="text" id="chat-search-input" placeholder="Search employees…" autocomplete="off">
+    </div>
+    <div class="chat-contact-list" id="chat-contact-list"></div>
+    <div class="chat-thread-wrap">
+      <div class="chat-thread" id="chat-thread"></div>
+      <div class="chat-input-row">
+        <input type="text" id="chat-input" placeholder="Type a message…" autocomplete="off">
+        <button class="chat-send-btn" onclick="sendChatMessage()" aria-label="Send message">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"></path><path d="M22 2 11 13"></path></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="page-content">
+
+<div class="dash-topbar">
+  <div class="dash-topbar-inner">
+    <div class="logo"><span class="logo-mark"></span>Brain</div>
+    <span class="role-pill manager">Manager console</span>
+    <div style="flex:1;"></div>
+    <button type="button" class="meeting-toggle" id="meeting-toggle-btn" onclick="openMeetingModal()" aria-label="Meetings" title="Meetings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+      <span class="meeting-badge" id="meeting-badge">0</span>
+    </button>
+    <button type="button" class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark / light mode"></button>
+    <div class="dash-user">
+      <div class="avatar-wrap">
+        <div class="avatar" id="user-avatar">RI</div>
+        <span class="status-dot" title="Active now"></span>
+      </div>
+      <div class="dash-user-info">
+        <b id="user-name">Rohan Iyer</b>
+        <span id="user-meta">Payments · Manager</span>
+        <div class="presence-label"><span class="status-dot"></span>Active now</div>
+      </div>
+      <button class="logout-btn" onclick="logout()">Log out</button>
+    </div>
+  </div>
+</div>
+
+<main class="wrap dash-main">
+  <div class="dash-head">
+    <h1>Search, upload, and manage your team.</h1>
+    <p>Full organization access — plus the ability to add new sources and manage employee profiles.</p>
+  </div>
+
+  <!-- SEARCH -->
+  <div class="search-card search-hero">
+    <div class="access-banner full">🔓 Full organization access — no restrictions applied</div>
+    <div class="search-input-row">
+      <input id="q-input" type="text" placeholder="Search across every connected source…">
+      <button class="search-btn" onclick="runSearch()">Search</button>
+    </div>
+    <div class="chips">
+      <button class="chip" onclick="fillAndRun(this)">Refund policy for enterprise plans</button>
+      <button class="chip" onclick="fillAndRun(this)">Q3 finance forecast summary</button>
+      <button class="chip" onclick="fillAndRun(this)">Payments outage owner</button>
+    </div>
+    <div class="result-list" id="results">
+      <div style="color:var(--ink-faint);font-size:13.5px;padding:6px 2px;">Try a question above — managers see every source, unrestricted.</div>
+    </div>
+  </div>
+
+  <!-- UPLOAD -->
+  <div class="dash-head" style="margin-top:8px;"><h1 style="font-size:19px;">Add new sources</h1></div>
+  <div class="search-card">
+    <div class="auth-field">
+      <label for="upload-visibility">Who can find these files in search?</label>
+      <select id="upload-visibility">
+        <option value="org">Everyone in the organization</option>
+        <option value="team:Support">Support team only</option>
+        <option value="team:Payments">Payments team only</option>
+        <option value="managers">Managers only</option>
+      </select>
+    </div>
+    <div class="dropzone" id="dropzone" onclick="document.getElementById('file-input').click()">
+      <h4>Drag files here, or click to upload</h4>
+      <p>PDF, DOCX, CSV, or plain text — indexed into the knowledge graph automatically.</p>
+    </div>
+    <input type="file" id="file-input" style="display:none;" multiple>
+    <div id="file-list"></div>
+  </div>
+
+  <!-- EMPLOYEES -->
+  <div class="dash-head" style="margin-top:8px;"><h1 style="font-size:19px;">Employee profiles</h1></div>
+  <table class="data-table">
+    <thead>
+      <tr><th>Name</th><th>Team</th><th>Access</th><th>Status</th><th></th></tr>
+    </thead>
+    <tbody id="employee-tbody"></tbody>
+  </table>
+
+</main>
+
+<!-- DELETE CONFIRM MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal-box">
+    <h3 id="modal-title">Delete this profile?</h3>
+    <p id="modal-body">This removes their access permanently. This can't be undone.</p>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-confirm" onclick="confirmDelete()">Delete profile</button>
+    </div>
+  </div>
+</div>
+
+<!-- MEETING MODAL (manager: create + schedule) -->
+<div class="modal-overlay" id="meeting-modal-overlay">
+  <div class="modal-box meeting-modal-box">
+    <div class="meeting-modal-head">
+      <h3>Meetings</h3>
+      <button class="modal-close-x" onclick="closeMeetingModal()" aria-label="Close">&times;</button>
+    </div>
+    <p class="meeting-modal-sub">Create and schedule a meeting for your team.</p>
+
+    <form id="meeting-form" onsubmit="return createMeeting(event)">
+      <div class="auth-field">
+        <label for="mt-title">Meeting title</label>
+        <input id="mt-title" type="text" placeholder="e.g. Weekly team sync" required>
+      </div>
+      <div class="meeting-form-row">
+        <div class="auth-field">
+          <label for="mt-date">Date</label>
+          <input id="mt-date" type="date" required>
+        </div>
+        <div class="auth-field">
+          <label for="mt-time">Time</label>
+          <input id="mt-time" type="time" required>
+        </div>
+      </div>
+      <div class="auth-field">
+        <label for="mt-participants">Invite employees (comma separated, optional)</label>
+        <input id="mt-participants" type="text" placeholder="e.g. Aisha Khan, Devon Park">
+      </div>
+      <button class="auth-submit" type="submit">Schedule meeting</button>
+    </form>
+
+    <hr class="meeting-divider">
+
+    <div class="meeting-list-wrap">
+      <h4>Scheduled meetings</h4>
+      <div class="meeting-list" id="meeting-list"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+  </div><!-- /page-content -->
+</div><!-- /app-shell -->
+
+<script src="app.js"></script>
+<script src="manager.js"></script>
+</body>
+</html>

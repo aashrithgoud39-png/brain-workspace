@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brain — Sign in</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script>
+  // Apply saved theme before paint to avoid a flash of the wrong theme
+  (function(){
+    if(localStorage.getItem('brain-theme') === 'dark'){
+      document.documentElement.setAttribute('data-theme','dark');
+    }
+  })();
+</script>
+</head>
+<body class="auth-body">
+
+<div class="auth-card">
+  <button type="button" class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark / light mode"></button>
+  <div class="auth-logo"><span class="logo-mark"></span>Brain</div>
+  <h2>Sign in to your workspace</h2>
+  <p class="auth-sub">Choose your role, then sign in with your ID.</p>
+
+  <div class="role-toggle">
+    <button type="button" id="tab-employee" class="active" onclick="setRole('employee')">Employee</button>
+    <button type="button" id="tab-manager" onclick="setRole('manager')">Manager</button>
+  </div>
+
+  <div class="auth-error" id="auth-error">Enter both an ID and a password to continue.</div>
+
+  <form id="login-form" onsubmit="return handleLogin(event)">
+    <div class="auth-field">
+      <label id="id-label" for="user-id">Employee ID</label>
+      <input id="user-id" type="text" placeholder="e.g. AK-1042" autocomplete="username" required>
+    </div>
+    <div class="auth-field">
+      <label for="user-pw">Password</label>
+      <div class="pw-wrap">
+        <input id="user-pw" type="password" placeholder="••••••••" autocomplete="current-password" required>
+        <button type="button" class="pw-toggle" id="pw-toggle-btn" onclick="togglePassword()" aria-label="Show password" title="Show password">
+          <svg id="pw-eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+        </button>
+      </div>
+    </div>
+    <button class="auth-submit" type="submit" id="submit-btn">Sign in as Employee</button>
+  </form>
+
+  <p class="auth-note">Demo accounts — Employee: <b>AK-1042</b> · Manager: <b>RI-2001</b><br>Password for both: <b>demo1234</b></p>
+</div>
+
+<script>
+const EYE_OPEN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+const EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a19.7 19.7 0 0 1 4.22-5.94M9.9 4.24A10.6 10.6 0 0 1 12 4c7 0 11 8 11 8a19.6 19.6 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
+const SUN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path></svg>';
+const MOON_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"></path></svg>';
+
+function togglePassword(){
+  const input = document.getElementById('user-pw');
+  const btn = document.getElementById('pw-toggle-btn');
+  const showing = input.type === 'text';
+  input.type = showing ? 'password' : 'text';
+  btn.innerHTML = showing ? EYE_OPEN : EYE_OFF;
+  btn.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+  btn.setAttribute('title', showing ? 'Show password' : 'Hide password');
+}
+
+function applyThemeIcon(){
+  const btn = document.getElementById('theme-toggle-btn');
+  if(!btn) return;
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  btn.innerHTML = isDark ? SUN_ICON : MOON_ICON;
+  btn.setAttribute('title', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+}
+function toggleTheme(){
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  if(isDark){
+    document.documentElement.removeAttribute('data-theme');
+    localStorage.setItem('brain-theme','light');
+  } else {
+    document.documentElement.setAttribute('data-theme','dark');
+    localStorage.setItem('brain-theme','dark');
+  }
+  applyThemeIcon();
+}
+applyThemeIcon();
+
+let currentRole = 'employee';
+
+function setRole(role){
+  currentRole = role;
+  document.getElementById('tab-employee').classList.toggle('active', role==='employee');
+  document.getElementById('tab-manager').classList.toggle('active', role==='manager');
+  document.getElementById('id-label').textContent = role==='employee' ? 'Employee ID' : 'Manager ID';
+  document.getElementById('user-id').placeholder = role==='employee' ? 'e.g. AK-1042' : 'e.g. RI-2001';
+  document.getElementById('submit-btn').textContent = role==='employee' ? 'Sign in as Employee' : 'Sign in as Manager';
+  document.getElementById('auth-error').classList.remove('show');
+}
+
+async function handleLogin(e){
+  e.preventDefault();
+  const id = document.getElementById('user-id').value.trim();
+  const pw = document.getElementById('user-pw').value;
+  const err = document.getElementById('auth-error');
+  const btn = document.getElementById('submit-btn');
+  const showError = (msg) => { err.textContent = msg; err.classList.add('show'); };
+  if(!id || !pw){ showError('Enter both an ID and a password to continue.'); return false; }
+
+  const label = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      credentials: 'same-origin',
+      body: JSON.stringify({ id, password: pw, role: currentRole })
+    });
+    const data = await res.json().catch(() => ({}));
+    if(!res.ok){ showError(data.error || 'Sign-in failed. Please try again.'); return false; }
+    // The server set an httpOnly session cookie; the dashboard asks the API who we are.
+    window.location.href = data.user.role === 'manager' ? 'manager.html' : 'employee.html';
+  } catch (_) {
+    showError('Could not reach the server. Check your connection and try again.');
+  } finally {
+    btn.disabled = false; btn.textContent = label;
+  }
+  return false;
+}
+</script>
+</body>
+</html>
