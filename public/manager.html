@@ -112,7 +112,13 @@
   </div>
 
   <!-- EMPLOYEES -->
-  <div class="dash-head" style="margin-top:8px;"><h1 style="font-size:19px;">Employee profiles</h1></div>
+  <div class="dash-head" style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+    <h1 style="font-size:19px;margin:0;">Employee profiles</h1>
+    <div style="display:flex;gap:8px;">
+      <button type="button" class="search-btn" onclick="openUserModal()" style="padding:8px 14px;font-size:13px;">+ Add profile</button>
+      <button type="button" class="modal-cancel" onclick="openHistoryModal()" style="padding:8px 14px;font-size:13px;">Search activity</button>
+    </div>
+  </div>
   <table class="data-table">
     <thead>
       <tr><th>Name</th><th>Team</th><th>Access</th><th>Status</th><th></th></tr>
@@ -131,6 +137,72 @@
       <button class="modal-cancel" onclick="closeModal()">Cancel</button>
       <button class="modal-confirm" onclick="confirmDelete()">Delete profile</button>
     </div>
+  </div>
+</div>
+
+<!-- ADD PROFILE MODAL -->
+<div class="modal-overlay" id="user-modal-overlay">
+  <div class="modal-box meeting-modal-box">
+    <div class="meeting-modal-head">
+      <h3>Add a profile</h3>
+      <button class="modal-close-x" onclick="closeUserModal()" aria-label="Close">&times;</button>
+    </div>
+    <p class="meeting-modal-sub">Create a new employee or manager account.</p>
+    <form id="user-form" onsubmit="return createUser(event)">
+      <div class="meeting-form-row">
+        <div class="auth-field">
+          <label for="au-id">Login ID</label>
+          <input id="au-id" type="text" placeholder="e.g. TE-3001" autocomplete="off" required>
+        </div>
+        <div class="auth-field">
+          <label for="au-name">Full name</label>
+          <input id="au-name" type="text" placeholder="e.g. Test Employee" autocomplete="off" required>
+        </div>
+      </div>
+      <div class="meeting-form-row">
+        <div class="auth-field">
+          <label for="au-role">Role</label>
+          <select id="au-role" onchange="byId('au-access').disabled = this.value === 'manager'">
+            <option value="employee">Employee</option>
+            <option value="manager">Manager</option>
+          </select>
+        </div>
+        <div class="auth-field">
+          <label for="au-team">Team</label>
+          <select id="au-team">
+            <option value="Support">Support</option>
+            <option value="Payments">Payments</option>
+            <option value="Management">Management</option>
+          </select>
+        </div>
+      </div>
+      <div class="meeting-form-row">
+        <div class="auth-field">
+          <label for="au-access">Access</label>
+          <select id="au-access">
+            <option value="view">View only</option>
+            <option value="edit">Can edit</option>
+          </select>
+        </div>
+        <div class="auth-field">
+          <label for="au-password">Password</label>
+          <input id="au-password" type="password" placeholder="At least 8 characters" minlength="8" autocomplete="new-password" required>
+        </div>
+      </div>
+      <button class="auth-submit" type="submit">Add profile</button>
+    </form>
+  </div>
+</div>
+
+<!-- SEARCH ACTIVITY MODAL -->
+<div class="modal-overlay" id="history-modal-overlay">
+  <div class="modal-box meeting-modal-box">
+    <div class="meeting-modal-head">
+      <h3>Search activity</h3>
+      <button class="modal-close-x" onclick="closeHistoryModal()" aria-label="Close">&times;</button>
+    </div>
+    <p class="meeting-modal-sub">What employees searched for, newest first (last 200 searches).</p>
+    <div id="history-list" style="max-height:60vh;overflow-y:auto;"></div>
   </div>
 </div>
 

@@ -71,3 +71,13 @@ CREATE TABLE IF NOT EXISTS meeting_participants (
   user_id    INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   PRIMARY KEY (meeting_id, user_id)
 );
+
+-- What employees searched for, so managers can review it
+CREATE TABLE IF NOT EXISTS search_history (
+  id           SERIAL PRIMARY KEY,
+  user_id      INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  query        TEXT NOT NULL,
+  result_count INT NOT NULL DEFAULT 0,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS search_history_created_idx ON search_history (created_at DESC);

@@ -80,10 +80,17 @@ router.get('/', async (req, res) => {
   semanticRows.forEach((r, i) => add(r, i + 1, r.passage ? shorten(r.passage) : null));
 
   const all = [...merged.values()].sort((a, b) => b.score - a.score);
-  res.json({
-    items: all.filter((r) => r.allowed).slice(0, 10).map(({ title, source, snippet }) => ({ title, source, snippet })),
-    hidden: all.filter((r) => !r.allowed).length,
-  });
+  const items = all.filter((r) => r.allowed).slice(0, 10).map(({ title, source, snippet }) => ({ title, source, snippet }));
+
+  // Record employee searches so managers can review them.
+  // This never blocks the search: if saving fails, the error is only logged.
+  if (!isManager) {
+    pool.query('INSERT INTO search_history (user_id, query, result_count) VALUES ($1, $2, $3)',
+      [req.user.id, q, items.length])
+      .catch((err) => console.error('Could not save search history:', err.message));
+  }
+
+  res.json({ items, hidden: all.filter((r) => !r.allowed).length });
 });
 
 module.exports = router;

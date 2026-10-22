@@ -162,4 +162,53 @@ async function cancelMeeting(id) {
 }
 
 window.pageInit = loadEmployees;
-window.pagePoll = loadEmployees;     // presence changes as people sign in and out
+window.pagePoll = loadEmployees;
+
+/* ---------- add profile (employee or manager) ---------- */
+function openUserModal() {
+  byId('user-form').reset();
+  byId('au-access').disabled = false;
+  byId('user-modal-overlay').classList.add('open');
+  byId('au-id').focus();
+}
+function closeUserModal() { byId('user-modal-overlay').classList.remove('open'); }
+async function createUser(e) {
+  e.preventDefault();
+  const role = byId('au-role').value;
+  const body = {
+    loginId: byId('au-id').value.trim(),
+    name: byId('au-name').value.trim(),
+    team: byId('au-team').value,
+    role,
+    access: role === 'manager' ? 'edit' : byId('au-access').value,
+    password: byId('au-password').value,
+  };
+  try {
+    await api('/employees', { method: 'POST', body });
+  } catch (err) { showToast(err.message); return false; }   // e.g. "That ID is already taken" — keep the form open
+  closeUserModal();
+  showToast(`${body.name} was added as ${role}`);
+  loadEmployees();
+  refreshContacts();
+  return false;
+}     // presence changes as people sign in and out
+
+/* ---------- search activity (manager only) ---------- */
+function closeHistoryModal() { byId('history-modal-overlay').classList.remove('open'); }
+async function openHistoryModal() {
+  byId('history-modal-overlay').classList.add('open');
+  const box = byId('history-list');
+  box.innerHTML = '<div class="meeting-empty">Loading…</div>';
+  let searches;
+  try { searches = (await api('/employees/search-history')).searches; }
+  catch (e) { box.innerHTML = `<div class="meeting-empty">${escapeHtml(e.message)}</div>`; return; }
+  if (!searches.length) { box.innerHTML = '<div class="meeting-empty">No employee searches yet.</div>'; return; }
+  box.innerHTML = '<table class="data-table"><thead><tr><th>Employee</th><th>Searched for</th><th>Results</th><th>When</th></tr></thead><tbody>' +
+    searches.map((s) => `
+      <tr>
+        <td>${escapeHtml(s.name)}<div class="f-meta">${escapeHtml(s.team)}</div></td>
+        <td>${escapeHtml(s.query)}</td>
+        <td>${s.resultCount}</td>
+        <td>${new Date(s.ts).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</td>
+      </tr>`).join('') + '</tbody></table>';
+}
