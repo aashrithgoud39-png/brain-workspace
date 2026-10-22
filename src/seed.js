@@ -2,6 +2,7 @@
 const bcrypt = require('bcryptjs');
 const { pool, migrate } = require('./db');
 const { indexDocument } = require('./indexer');
+const { isProd } = require('./config');
 
 const DEMO_PASSWORD = 'demo1234';
 
@@ -38,6 +39,23 @@ async function seed({ reset = false } = {}) {
   if (reset) await pool.query('TRUNCATE users, documents, messages, meetings, meeting_participants RESTART IDENTITY CASCADE');
   const { rows } = await pool.query('SELECT count(*)::int AS n FROM users');
   if (rows[0].n > 0) return false;
+
+  if (isProd) {
+    // Production: never create demo accounts. Create one real manager from settings instead.
+    const id = process.env.BOOTSTRAP_MANAGER_ID;
+    const pw = process.env.BOOTSTRAP_MANAGER_PASSWORD;
+    if (!id || !pw) {
+      console.warn('No users yet. Set BOOTSTRAP_MANAGER_ID and BOOTSTRAP_MANAGER_PASSWORD to create the first manager.');
+      return false;
+    }
+    if (pw.length < 10) throw new Error('BOOTSTRAP_MANAGER_PASSWORD must be at least 10 characters');
+    const managerHash = await bcrypt.hash(pw, 10);
+    await pool.query(
+      'INSERT INTO users (login_id, name, team, role, access, active, password_hash) VALUES ($1,$2,$3,$4,$5,$6,$7)',
+      [id, process.env.BOOTSTRAP_MANAGER_NAME || 'Manager', process.env.BOOTSTRAP_MANAGER_TEAM || 'Management', 'manager', 'edit', false, managerHash]);
+    console.log('Created the first manager account: ' + id);
+    return false;
+  }
 
   const hash = await bcrypt.hash(DEMO_PASSWORD, 10);
   const ids = {};
